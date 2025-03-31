@@ -46,6 +46,18 @@ class EyerissMapper:
     def evaluate(self, metrics: AnalysisResult) -> float:
         score = 0
         #! <<<========= Implement here =========>>>
+        keys = ["glb_usage", "glb_access", "dram_access", "latency", "energy", "power"]
+
+        if metrics["bound_by"] == "compute":
+            w = [1.0, 1.0, 1.0, 2.0, 0.5, 0.5]
+        elif metrics["bound_by"] == "memory":
+            w = [1.0, 1.5, 2.0, 1.0, 0.5, 0.5]
+        else:
+            w = [1.0, 1.0, 1.0, 1.0, 0.5, 0.5]
+
+        for i in range(len(keys)):
+            score += metrics[keys[i]] * w[i]
+
         return score
 
     @property
@@ -119,13 +131,38 @@ class EyerissMapper:
     def generate_mappings(self, verbose: bool = False) -> list[EyerissMappingParam]:
         candidate_solutions = []
         #! <<<========= Implement here =========>>>
+        n_avaliable_list = [1]
+        p_available_list = self.p_avaliable()
+        q_available_list = self.q_avaliable()
+        e_available_list = self.e_available()
+        r_available_list = self.r_available()
+        t_available_list = self.t_available()
+        m_available_list = self.m_available()
+
+        candidate_solutions = product(
+            m_available_list,
+            n_avaliable_list,
+            e_available_list,
+            p_available_list,
+            q_available_list,
+            r_available_list,
+            t_available_list,
+        )
+
+        candidate_solutions = [
+            EyerissMappingParam(*candidate_solution)
+            for candidate_solution in candidate_solutions
+            if self.validate(candidate_solution)
+        ]
 
         return candidate_solutions
 
     def generate_hardware(self) -> list[EyerissHardwareParam]:
         candidate_solutions = []
-        pe_array_h_list = [6]  # add more values to explore more solutions
-        pe_array_w_list = [8]  # add more values to explore more solutions
+        # pe_array_h_list = [6]  # add more values to explore more solutions
+        # pe_array_w_list = [8]  # add more values to explore more solutions
+        pe_array_h_list = [i for i in range(6, 13)]
+        pe_array_w_list = [i for i in range(8, 15)]
         ifmap_spad_size_list = [12]
         filter_spad_size_list = [48]
         psum_spad_size_list = [16]
