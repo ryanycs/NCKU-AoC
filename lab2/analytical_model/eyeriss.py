@@ -1,4 +1,10 @@
-from dataclasses import dataclass, asdict
+import sys
+from dataclasses import asdict, dataclass
+from math import ceil, floor
+from pathlib import Path
+
+project_root = Path(__file__).parents[1]
+sys.path.append(str(project_root))
 
 from layer_info import Conv2DShapeParam, MaxPool2DShapeParam
 
@@ -143,9 +149,31 @@ class EyerissAnalyzer:
     def glb_usage_per_pass(self) -> dict[str, int]:
         sizes: dict[str, int] = {}
         #! <<<========= Implement here =========>>>
+        W = self.conv_shape.W
+        R = self.conv_shape.R
+        S = self.conv_shape.S
+        F = self.conv_shape.F
+        U = self.conv_shape.U
+        n = self.mapping.n
+        m = self.mapping.m
+        qr = self.mapping.q * self.mapping.r
+        pt = self.mapping.p * self.mapping.t
+        e = self.mapping.e
+
+        sizes["ifmap"] = n * qr * (U * (e - 1) + R) * W
+        sizes["filter"] = pt * qr * R * S
+        sizes["bias"] = pt * 4
+        sizes["psum"] = n * m * e * F * 4
+
+        sizes["total"] = (
+            sizes["ifmap"]
+            + sizes["filter"]
+            + sizes["bias"]
+            + sizes["psum"]
+        )
+
         return sizes
 
-    
     @property
     def glb_size_legal(self) -> bool:
         return self.glb_usage_per_pass["total"] <= self.hardware.glb_size
@@ -155,6 +183,67 @@ class EyerissAnalyzer:
     def dram_access_per_layer(self) -> dict[str, int]:
         res: dict[str, int] = {}
         #! <<<========= Implement here =========>>>
+        N = self.conv_shape.N
+        W = self.conv_shape.W
+        R = self.conv_shape.R
+        S = self.conv_shape.S
+        E = self.conv_shape.E
+        F = self.conv_shape.F
+        C = self.conv_shape.C
+        M = self.conv_shape.M
+        U = self.conv_shape.U
+        n = self.mapping.n
+        m = self.mapping.m
+        qr = self.mapping.q * self.mapping.r
+        e = self.mapping.e
+
+        res["ifmap_read"] = (
+            ceil(M / m)
+            * ceil(E / e)
+            * ceil(N / n)
+            * ceil(C / qr)
+            * n * qr * (U * (e - 1) + R) * W
+        )
+
+        res["filter_read"] = (
+            ceil(M / m)
+            * ceil(E / e)
+            * ceil(C / qr)
+            * m * qr * R * S
+        )
+        res["bias_read"] = (
+            ceil(M / m)
+            * ceil(E / e)
+            * m * 4
+        )
+
+        if self.maxpool_shape is None:
+            res["ofmap_write"] = (
+                ceil(M / m)
+                * ceil(E / e)
+                * ceil(N / n)
+                * n * m * e * F
+            )
+        else:
+            kernel_size = self.maxpool_shape.kernel_size
+            stride = self.maxpool_shape.stride
+            res["ofmap_write"] = (
+                ceil(M / m)
+                * ceil(E / e)
+                * ceil(N / n)
+                * n * m * (floor((e - kernel_size) / stride) + 1) * (floor((F - kernel_size) / stride) + 1)
+            )
+
+
+        res["read"] = (
+            res["ifmap_read"]
+            + res["filter_read"]
+            + res["bias_read"]
+        )
+        res["write"] = res["ofmap_write"]
+
+        res["total"] = res["read"] + res["write"]
+
         return res
 
     # GLB Accesses (GLB-Spad data movement)
@@ -162,9 +251,90 @@ class EyerissAnalyzer:
     def glb_access_per_layer(self) -> dict[str, int]:
         res: dict[str, int] = {}
         #! <<<========= Implement here =========>>>
+        N = self.conv_shape.N
+        W = self.conv_shape.W
+        R = self.conv_shape.R
+        S = self.conv_shape.S
+        E = self.conv_shape.E
+        F = self.conv_shape.F
+        C = self.conv_shape.C
+        M = self.conv_shape.M
+        U = self.conv_shape.U
+        n = self.mapping.n
+        m = self.mapping.m
+        qr = self.mapping.q * self.mapping.r
+        pt = self.mapping.p * self.mapping.t
+        e = self.mapping.e
+
+        res["ifmap_read"] = (
+            ceil(M / m)
+            * ceil(E / e)
+            * ceil(N / n)
+            * ceil(C / qr)
+            * ceil(m / pt)
+            * n * qr * (U * (e - 1) + R) * W
+        )
+
+        res["filter_read"] = (
+            ceil(M / m)
+            * ceil(E / e)
+            * ceil(C / qr)
+            * ceil(m / pt)
+            * pt * qr * R * S
+        )
+
+        res["bias_read"] = (
+            ceil(M / m)
+            * ceil(E / e)
+            * ceil(m / pt)
+            * pt * 4
+        )
+
+        res["psum_read"] = (
+            ceil(M / m)
+            * ceil(E / e)
+            * ceil(N / n)
+            * ceil(C / qr)
+            * ceil(m / pt)
+            * n * pt * e * F * 4
+        )
+
+        res["psum_write"] = (
+            ceil(M / m)
+            * ceil(E / e)
+            * ceil(N / n)
+            * ceil(C / qr)
+            * ceil(m / pt)
+            * n * pt * e * F * 4
+        )
+
+        if self.maxpool_shape is None:
+            bias = (
+                ceil(E / e)
+                * ceil(M / m)
+                * m * e * F
+            )
+        else:
+            kernel_size = self.maxpool_shape.kernel_size
+            stride = self.maxpool_shape.stride
+            bias = (
+                ceil(E / e)
+                * ceil(M / m)
+                * m * (floor((e - kernel_size) / stride) + 1) * (floor((F - kernel_size) / stride) + 1)
+            )
+
+        res["read"] = (
+            res["ifmap_read"]
+            + res["filter_read"]
+            + res["bias_read"]
+            + res["psum_read"]
+        )
+        res["write"] = res["psum_write"] + bias
+
+        res["total"] = res["read"] + res["write"]
+
         return res
 
-    
     @property
     def latency_per_layer(self) -> int:
         ofmap_size = (
@@ -176,8 +346,16 @@ class EyerissAnalyzer:
         ppu_latency_per_elem = 1 if self.maxpool_shape is None else 5
 
         return (
-            self.glb_access_per_layer["total"] * GLB_ACCESS_TIME
-            + self.dram_access_per_layer["total"] * DRAM_ACCESS_TIME
+            ceil(
+                self.glb_access_per_layer["total"]
+                * GLB_ACCESS_TIME
+                / self.hardware.noc_bw
+            )
+            + ceil(
+                self.dram_access_per_layer["total"]
+                * DRAM_ACCESS_TIME
+                / self.hardware.bus_bw
+            )
             + ofmap_size * ppu_latency_per_elem
         )
 
@@ -271,5 +449,58 @@ class EyerissAnalyzer:
             "dram_access": self.dram_access_per_layer["total"],  # bytes
             "macs": self.macs_per_layer,
             "latency": self.latency_per_layer,  # cycles
+            "energy": self.energy_per_layer["total"],  # uJ
+            "power": self.power_per_layer["total"],  # uW
+            "operational_intensity": self.operational_intensity,  # ops/byte
+            "bound_by": self.bound_by,
                         # or any other metrics you want to include in the report
         }
+
+if __name__ == "__main__":
+    eyeriss = EyerissAnalyzer(
+        name="Eyeriss",
+        hardware_param=EyerissHardwareParam(
+            pe_array_h=6,
+            pe_array_w=8,
+            ifmap_spad_size=12,
+            filter_spad_size=48,
+            psum_spad_size=16,
+            glb_size=64 * 2**10,
+            bus_bw=4,
+            noc_bw=4,
+        ),
+    )
+    eyeriss.mapping = EyerissMappingParam(m=16, n=1, e=8, p=4, q=4, r=1, t=2)
+
+    conv_shapes = [
+        Conv2DShapeParam(N=1, H=32, W=32, R=3, S=3, E=32, F=32, C=3, M=64, U=1),
+        Conv2DShapeParam(N=1, H=16, W=16, R=3, S=3, E=16, F=16, C=64, M=192, U=1),
+        Conv2DShapeParam(N=1, H=8, W=8, R=3, S=3, E=8, F=8, C=192, M=384, U=1),
+        Conv2DShapeParam(N=1, H=8, W=8, R=3, S=3, E=8, F=8, C=384, M=256, U=1),
+        Conv2DShapeParam(N=1, H=8, W=8, R=3, S=3, E=8, F=8, C=256, M=256, U=1),
+    ]
+    maxpool_shapes = [
+        MaxPool2DShapeParam(N=1, kernel_size=2, stride=2),
+        MaxPool2DShapeParam(N=1, kernel_size=2, stride=2),
+        None,
+        None,
+        MaxPool2DShapeParam(N=1, kernel_size=2, stride=2),
+    ]
+
+    for i in range(len(conv_shapes)):
+        eyeriss.conv_shape = conv_shapes[i]
+        eyeriss.maxpool_shape = maxpool_shapes[i]
+        print(f'GLB usage: {eyeriss.glb_usage_per_pass["total"]} bytes')
+        print(f'GLB reads: {eyeriss.glb_access_per_layer["read"]} bytes')
+        print(f'GLB write: {eyeriss.glb_access_per_layer["write"]} bytes')
+        print(f'GLB access: {eyeriss.glb_access_per_layer["total"]} bytes')
+        print(f'DRAM reads: {eyeriss.dram_access_per_layer["read"]} bytes')
+        print(f'DRAM write: {eyeriss.dram_access_per_layer["write"]} bytes')
+        print(f'DRAM access: {eyeriss.dram_access_per_layer["total"]} bytes')
+        print(f'MACs: {eyeriss.macs_per_layer} ops')
+        print(f'latency: {eyeriss.latency_per_layer} cycles')
+        print(f'energy total: {eyeriss.energy_per_layer["total"]} uJ')
+        print(f'power total: {eyeriss.power_per_layer["total"]} uW')
+        print(f'operational intensity: {eyeriss.operational_intensity} ops/byte')
+        print()
+

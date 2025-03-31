@@ -4,11 +4,12 @@ from pathlib import Path
 import onnx
 import torch
 import torch.nn as nn
+import torch.nn.quantized as nnq
 
 project_root = Path(__file__).parents[1]
 sys.path.append(str(project_root))
 
-import torch2onnx
+from network_parser import torch2onnx
 from layer_info import (
     Conv2DShapeParam,
     LinearShapeParam,
@@ -22,7 +23,7 @@ def parse_pytorch(model: nn.Module, input_shape=(1, 3, 32, 32)) -> list[ShapePar
     layers = []
     #! <<<========= Implement here =========>>>
     def hook(module: nn.Module, inputs: torch.Tensor, output: torch.Tensor) -> None:
-        if isinstance(module, nn.Conv2d):
+        if isinstance(module, nn.Conv2d) or isinstance(module, nnq.Conv2d):
             N, C, H, W = inputs[0].shape # batch_size, in_channels, in_height, in_width
             R, S = module.kernel_size    # filter_height, filter_width
             E, F = output.shape[2:]      # out_height, out_width
@@ -35,7 +36,7 @@ def parse_pytorch(model: nn.Module, input_shape=(1, 3, 32, 32)) -> list[ShapePar
             N, C, H, W = inputs[0].shape
             kernel_size, stride = module.kernel_size, module.stride
             layers.append(MaxPool2DShapeParam(N, kernel_size, stride))
-        elif isinstance(module, nn.Linear):
+        elif isinstance(module, nn.Linear) or isinstance(module, nnq.Linear):
             N, in_features = inputs[0].shape
             out_features = module.out_features
             layers.append(LinearShapeParam(N, in_features, out_features))
