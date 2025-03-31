@@ -208,12 +208,14 @@ class EyerissAnalyzer:
         res["filter_read"] = (
             ceil(M / m)
             * ceil(E / e)
+            * ceil(N / n)
             * ceil(C / qr)
             * m * qr * R * S
         )
         res["bias_read"] = (
             ceil(M / m)
             * ceil(E / e)
+            * ceil(N / n)
             * m * 4
         )
 
@@ -278,6 +280,7 @@ class EyerissAnalyzer:
         res["filter_read"] = (
             ceil(M / m)
             * ceil(E / e)
+            * ceil(N / n)
             * ceil(C / qr)
             * ceil(m / pt)
             * pt * qr * R * S
@@ -286,6 +289,7 @@ class EyerissAnalyzer:
         res["bias_read"] = (
             ceil(M / m)
             * ceil(E / e)
+            * ceil(N / n)
             * ceil(m / pt)
             * pt * 4
         )
@@ -311,6 +315,7 @@ class EyerissAnalyzer:
         if self.maxpool_shape is None:
             bias = (
                 ceil(E / e)
+                * ceil(N / n)
                 * ceil(M / m)
                 * m * e * F
             )
@@ -319,6 +324,7 @@ class EyerissAnalyzer:
             stride = self.maxpool_shape.stride
             bias = (
                 ceil(E / e)
+                * ceil(N / n)
                 * ceil(M / m)
                 * m * (floor((e - kernel_size) / stride) + 1) * (floor((F - kernel_size) / stride) + 1)
             )
@@ -451,8 +457,6 @@ class EyerissAnalyzer:
             "latency": self.latency_per_layer,  # cycles
             "energy": self.energy_per_layer["total"],  # uJ
             "power": self.power_per_layer["total"],  # uW
-            "operational_intensity": self.operational_intensity,  # ops/byte
-            "bound_by": self.bound_by,
                         # or any other metrics you want to include in the report
         }
 
