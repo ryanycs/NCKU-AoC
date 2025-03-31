@@ -112,7 +112,7 @@ def main():
     results: list[dict[str, str | int | float]] = []
     for i in range(0, len(layers), 2):
         mapper = EyerissMapper(name=f"vgg8.conv{i // 2}")
-        res = mapper.run(layers[i], layers[i + 1])
+        res = mapper.run(layers[i], layers[i + 1], 3)
         results.extend(res)
 
     # Export the results to CSV and Markdown files
