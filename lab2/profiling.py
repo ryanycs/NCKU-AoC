@@ -44,7 +44,7 @@ def main():
 
     with profile(
         activities=[ProfilerActivity.CPU],
-        record_shapes=True,
+        record_shapes=False,
         profile_memory=True,
         with_stack=True,
         with_flops=True,
@@ -54,7 +54,7 @@ def main():
 
     # Display the profile results
     print(
-        prof.key_averages(group_by_input_shape=True).table(
+        prof.key_averages(group_by_input_shape=False).table(
             sort_by="cpu_time_total", row_limit=10
         )
     )

@@ -124,6 +124,11 @@ def plot_example():
         workloads={"Workload": 16.0},
         filename="../log/figure/hardware.png",
     )
+    plot_roofline(
+        rooflines={"Roofline": (48.0, 4.0)},
+        workloads={"Conv2D kernel": 37.5},
+        filename="../log/figure/conv2d.png",
+    )
 
 
 def main() -> None:
