@@ -51,7 +51,7 @@ logic [4:0] F;
 logic [1:0] p;
 logic mode;
 
-always @(*) begin
+always_comb begin
     case (state)
         S_READ_CONFIG:
             next_state = PE_en ? S_READ_FILTER : S_READ_CONFIG;
@@ -93,7 +93,7 @@ end
 // ===================================================================
 
 // config p, q
-always @(posedge clk) begin
+always_ff @(posedge clk) begin
     case (state)
         S_READ_CONFIG: begin
             q    <= i_config[1:0];
@@ -111,7 +111,7 @@ always @(posedge clk) begin
 end
 
 // spad
-always @(posedge clk) begin
+always_ff @(posedge clk) begin
     case (state)
         S_READ_FILTER: begin
             for (int i = 0; i < 4; i = i + 1) begin
@@ -157,7 +157,7 @@ end
 // ===================================================================
 
 // counter
-always @(posedge clk or posedge rst) begin
+always_ff @(posedge clk or posedge rst) begin
     if (rst)
         counter <= 0;
     else
@@ -206,7 +206,7 @@ end
 
 
 // c_idx
-always @(posedge clk) begin
+always_ff @(posedge clk) begin
     case (state)
         S_ACCUMULATE:
             c_idx <= (m_idx == p && f_idx == `FILT_S - 1) ? c_idx + 1 : c_idx;
@@ -216,7 +216,7 @@ always @(posedge clk) begin
 end
 
 // m_idx
-always @(posedge clk) begin
+always_ff @(posedge clk) begin
     case (state)
         S_ACCUMULATE:
             m_idx <= (f_idx == `FILT_S - 1) ? (m_idx == p ? 0 : m_idx + 1) : m_idx;
@@ -226,7 +226,7 @@ always @(posedge clk) begin
 end
 
 // f_idx
-always @(posedge clk) begin
+always_ff @(posedge clk) begin
     case (state)
         S_ACCUMULATE:
             f_idx <= (f_idx == `FILT_S - 1) ? 0 : f_idx + 1;
@@ -236,7 +236,7 @@ always @(posedge clk) begin
 end
 
 // f_count
-always @(posedge opsum_valid or posedge rst) begin
+always_ff @(posedge opsum_valid or posedge rst) begin
     if (rst)
         f_count <= 0;
     else
@@ -244,7 +244,7 @@ always @(posedge opsum_valid or posedge rst) begin
 end
 
 // state register
-always @(posedge clk or posedge rst) begin
+always_ff @(posedge clk or posedge rst) begin
     if (rst)
         state <= S_READ_CONFIG;
     else
@@ -255,7 +255,7 @@ end
 //  Output
 // ===================================================================
 
-always @(*) begin
+always_comb begin
     filter_ready = (state == S_READ_FILTER);
     ifmap_ready = (state == S_READ_IFMAP1 || state == S_READ_IFMAP2);
     ipsum_ready = (state == S_READ_IPSUM);
