@@ -25,8 +25,8 @@ typedef enum logic [2:0] {
     S_READ_IFMAP1, // Read first S=3 ifmap
     S_READ_IFMAP2, // Read 1 ifmap and pop 1 ifmap
     S_READ_IPSUM,  // Read p ipsum
-    S_ACCUMULATE,
-    S_WRITE_OPSUM,
+    S_ACCUMULATE,  // Accumulate psum += filter * ifmap
+    S_WRITE_OPSUM, // Write p opsum to GLB
     S_DONE
 } state_t;
 
@@ -43,12 +43,12 @@ logic [5:0] counter;
 logic [1:0] m_idx; // filter index
 logic [1:0] c_idx; // channel index
 logic [1:0] f_idx; // kernel index
-logic [4:0] f_count;
+logic [4:0] f_count; // number of 1D convolution
 
 // config
-logic [1:0] q;
-logic [4:0] F;
-logic [1:0] p;
+logic [1:0] q; // q - 1
+logic [4:0] F; // F
+logic [1:0] p; // p - 1
 logic mode;
 
 always_comb begin
@@ -182,19 +182,13 @@ always_ff @(posedge clk or posedge rst) begin
 
         S_READ_IPSUM:
             if (ipsum_valid)
-                if (2'(counter) == p)
-                    counter <= 0;
-                else
-                    counter <= counter + 1;
+                counter <= (2'(counter) == p) ? 0 : counter + 1;
             else
                 counter <= counter;
 
         S_WRITE_OPSUM:
             if (opsum_ready)
-                if (2'(counter) == p)
-                    counter <= 0;
-                else
-                    counter <= counter + 1;
+                counter <= (2'(counter) == p) ? 0 : counter + 1;
             else
                 counter <= counter;
 
@@ -202,8 +196,6 @@ always_ff @(posedge clk or posedge rst) begin
             counter <= 0;
     endcase
 end
-
-
 
 // c_idx
 always_ff @(posedge clk) begin
@@ -257,10 +249,10 @@ end
 
 always_comb begin
     filter_ready = (state == S_READ_FILTER);
-    ifmap_ready = (state == S_READ_IFMAP1 || state == S_READ_IFMAP2);
-    ipsum_ready = (state == S_READ_IPSUM);
-    opsum_valid = (state == S_WRITE_OPSUM);
-    opsum = ofmap_spad[2'(counter)];
+    ifmap_ready  = (state == S_READ_IFMAP1 || state == S_READ_IFMAP2);
+    ipsum_ready  = (state == S_READ_IPSUM);
+    opsum_valid  = (state == S_WRITE_OPSUM);
+    opsum        = ofmap_spad[2'(counter)];
 end
 
 endmodule
