@@ -19,7 +19,7 @@ module PE (
     output logic opsum_valid
 );
 
-typedef enum logic [3:0] {
+typedef enum logic [2:0] {
     S_READ_CONFIG,
     S_READ_FILTER,
     S_READ_IFMAP1, // Read first S=3 ifmap
@@ -31,7 +31,7 @@ typedef enum logic [3:0] {
 } state_t;
 
 // state reg
-logic [3:0] state, next_state;
+logic [2:0] state, next_state;
 
 // spad
 logic signed [`IFMAP_SIZE-1:0]  ifmap_spad  [`IFMAP_SPAD_LEN-1:0];
