@@ -122,7 +122,7 @@ always_ff @(posedge clk) begin
         S_READ_IFMAP1: begin
             for (int i = 0; i < 4; i = i + 1) begin
                 /* ifmap - 128 = {ifmap[7] ^ 1'b1, ifmap[6:0]}, if ifmap is int8 */
-                ifmap_spad[4'(counter) + 4'(i)] <= {ifmap[(i+1)*`IFMAP_SIZE - 1] ^ 1'b1,
+                ifmap_spad[4'(counter) + 4'(i)] <= {~ifmap[(i+1)*`IFMAP_SIZE - 1],
                                                     ifmap[i*`IFMAP_SIZE +: `IFMAP_SIZE-1]};
             end
         end
@@ -132,7 +132,7 @@ always_ff @(posedge clk) begin
                 for (int i = 0; i < 4; i = i + 1) begin
                     ifmap_spad[i] <= ifmap_spad[4 + i];
                     ifmap_spad[4 + i] <= ifmap_spad[8 + i];
-                    ifmap_spad[8 + i] <= {ifmap[(i+1)*`IFMAP_SIZE - 1] ^ 1'b1,
+                    ifmap_spad[8 + i] <= {~ifmap[(i+1)*`IFMAP_SIZE - 1],
                                           ifmap[i*`IFMAP_SIZE +: `IFMAP_SIZE-1]};
                 end
         end
