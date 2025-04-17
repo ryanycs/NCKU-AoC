@@ -8,7 +8,7 @@ logic signed [`DATA_BITS-1:0] tmp;
 logic sign_bit = data_in[`DATA_BITS-1];
 
 Comparator_Qint8 comparator (
-    .data_in(tmp),
+    .data_in (tmp),
     .data_out(data_out)
 );
 
