@@ -33,26 +33,26 @@ logic [7:0] data_post_quant;
 logic [7:0] data_maxpool;
 
 Post_Quant post_quant (
-    .data_in(data_in),
+    .data_in       (data_in),
     .scaling_factor(scaling_factor),
-    .data_out(data_post_quant)
+    .data_out      (data_post_quant)
 );
 
 Maxpool_Qint8 maxpool (
-    .clk(clk),
-    .rst(rst),
-    .data_in(data_post_quant),
-    .maxpool_en(maxpool_en),
+    .clk,
+    .rst,
+    .data_in     (data_post_quant),
+    .maxpool_en  (maxpool_en),
     .maxpool_init(maxpool_init),
-    .data_out(data_maxpool)
+    .data_out    (data_maxpool)
 );
 
 ReLU_Qint8 relu (
     .data_post_quant(data_post_quant),
-    .data_maxpool(data_maxpool),
-    .relu_sel(relu_sel),
-    .relu_en(relu_en),
-    .data_out(data_out)
+    .data_maxpool   (data_maxpool),
+    .relu_sel       (relu_sel),
+    .relu_en        (relu_en),
+    .data_out       (data_out)
 );
 
 endmodule
