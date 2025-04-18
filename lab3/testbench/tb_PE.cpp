@@ -124,8 +124,10 @@ void transaction(VPE* dut, int& send_data_type, Index* index, const vector<vecto
             set_signal(dut, dut->PE_en, 1);
             set_signal(dut, dut->i_config, ((OFMAP_CH - 1) << 7) + ((OFMAP_COL - 1) << 2) + (I_CH - 1));
             send_data_type = SEND_FILT;
-
+            break;
         case SEND_FILT:
+            set_signal(dut, dut->PE_en, 0);
+            set_signal(dut, dut->i_config, 0);
             set_signal(dut, dut->filter_valid, rand() % 2);  // randomize idata_valid 0 or 1
             for (int i = 0; i < I_CH; i++)
                 send_data += (filter_data[index->count_filter_num][index->count_filter_col][i] & 0xFF) << (8 * i);
