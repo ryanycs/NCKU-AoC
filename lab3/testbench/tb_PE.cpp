@@ -118,6 +118,7 @@ void transaction(VPE* dut, int& send_data_type, Index* index, const vector<vecto
     if (send_data_type != SEND_FILT) dut->filter_valid = 0;
     if (send_data_type != SEND_IFMAP) dut->ifmap_valid = 0;
     if (send_data_type != SEND_IPSUM) dut->ipsum_valid = 0;
+    if (send_data_type != STORE_OPSUM) dut->opsum_ready = 0;
 
     switch (send_data_type) {
         case SEND_CONFIG:
