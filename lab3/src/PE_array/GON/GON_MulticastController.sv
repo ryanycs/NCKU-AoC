@@ -17,4 +17,16 @@ module GON_MulticastController #(
     input ready_in,
     output logic ready_out
 );
+
+// id
+always_ff @(posedge clk or posedge rst) begin
+    if (rst) id <= 0;
+    else id <= set_id ? id_in : id;
+end
+
+always_comb begin
+    ready_out = ready_in && (tag == id);
+    valid_out = valid_in && (tag == id);
+end
+
 endmodule
