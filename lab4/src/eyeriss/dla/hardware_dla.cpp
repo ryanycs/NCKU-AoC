@@ -34,6 +34,20 @@ void set_enable(uint32_t scale_factor, bool maxpool, bool relu,
                 bool operation) {
     uint32_t value;
     /*! <<<========= Implement here =========>>>*/
+    /*
+    ┌───────┬─┬─┬─┬─┬─┬─┬─────────┬────┬───────┬──┐
+    │31...10│9│8│7│6│5│4│    3    │  2 │   1   │ 0│
+    ├───────┼─┴─┴─┴─┴─┴─┼─────────┼────┼───────┼──┤
+    │       │   scale   │operation│relu│maxpool│en│
+    └───────┴───────────┴─────────┴────┴───────┴──┘
+    */
+    value = 0;
+    value |= scale_factor << 4;
+    value |= operation << 3;
+    value |= relu << 2;
+    value |= maxpool << 1;
+    value |= 1;
+
     reg_write(DLA_ENABLE_OFFSET, value);
 }
 
@@ -41,6 +55,21 @@ void set_mapping_param(uint32_t m, uint32_t e, uint32_t p, uint32_t q,
                        uint32_t r, uint32_t t) {
     uint32_t value;
     /*! <<<========= Implement here =========>>>*/
+    /*
+    ┌───────┬───────┬──┬──┬──┬──┬──┬──┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+    │31...26│25...16│15│14│13│12│11│10│9│8│7│6│5│4│3│2│1│0│
+    ├───────┼───────┼──┴──┴──┴──┼──┴──┴─┼─┴─┴─┼─┴─┴─┼─┴─┴─┤
+    │       │   m   │     e     │   p   │  q  │  r  │  t  │
+    └───────┴───────┴───────────┴───────┴─────┴─────┴─────┘
+    */
+    value = 0;
+    value |= m << 16;
+    value |= e << 12;
+    value |= p << 9;
+    value |= q << 6;
+    value |= r << 3;
+    value |= t;
+
     reg_write(DLA_MAPPING_PARAM_OFFSET, value);
 }
 
@@ -48,12 +77,38 @@ void set_shape_param1(uint32_t PAD, uint32_t U, uint32_t R, uint32_t S,
                       uint32_t C, uint32_t M) {
     uint32_t value;
     /*! <<<========= Implement here =========>>>*/
+    /*
+    ┌───────┬──┬──┬──┬──┬──┬──┬──┬──┬──┬───────┬─────┐
+    │31...29│28│27│26│25│24│23│22│21│20│19...10│9...0│
+    ├───────┼──┴──┴──┼──┴──┼──┴──┼──┴──┼───────┼─────┤
+    │       │   PAD  │  U  │  R  │  S  │   C   │  M  │
+    └───────┴────────┴─────┴─────┴─────┴───────┴─────┘
+    */
+    value = 0;
+    value |= PAD << 26;
+    value |= U << 24;
+    value |= R << 22;
+    value |= S << 20;
+    value |= C << 10;
+    value |= M;
+
     reg_write(DLA_SHAPE_PARAM1_OFFSET, value);
 }
 
 void set_shape_param2(uint32_t W, uint32_t H, uint32_t PAD) {
     uint32_t value;
     /*! <<<========= Implement here =========>>>*/
+    /*
+    ┌───────┬──┬──┬──┬──┬──┬──┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+    │31...16│15│14│13│12│11│10│9│8│7│6│5│4│3│2│1│0│
+    ├───────┼──┴──┴──┴──┴──┴──┴─┴─┼─┴─┴─┴─┴─┴─┴─┴─┤
+    │       │          W          │       H       │
+    └───────┴─────────────────────┴───────────────┘
+    */
+    value = 0;
+    value |= (((PAD << 1) + W) & 0xFFFF) << 8;
+    value |= ((PAD << 1) + H) & 0xFFFF;
+
     reg_write(DLA_SHAPE_PARAM2_OFFSET, value);
 }
 
