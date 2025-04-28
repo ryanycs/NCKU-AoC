@@ -7,6 +7,53 @@ void conv_maxpooling(uint32_t input_C, uint32_t input_H, uint32_t input_W,
                      uint32_t scale) {
 
     /*! <<<========= Implement here =========>>>*/
+    uint32_t output_H = (input_H - filter_H + 2 * padding) + 1;
+    uint32_t output_W = (input_W - filter_W + 2 * padding) + 1;
+    uint32_t maxpool_H = output_H / 2;
+    uint32_t maxpool_W = output_W / 2;
+
+    for (int m = 0; m < filter_N; m++) { // M
+        for (int y = 0; y < output_H; y++) { // E
+            for (int x = 0; x < output_W; x++) { // F
+                int output_index = m * maxpool_H * maxpool_W + (y / 2) * maxpool_W + (x / 2);
+                int32_t sum = bias[m];
+
+                for (int i = 0; i < filter_H; i++) { // R
+                    for (int j = 0; j < filter_W; j++) { // S
+                        for (int k = 0; k < filter_C; k++) { // C
+                            int y_p = y + i - padding;
+                            int x_p = x + j - padding;
+
+                            // 0 padding
+                            if (y_p < 0 || y_p >= input_H || x_p < 0 || x_p >= input_W)
+                                continue;
+
+                            int input_index = (
+                                k * input_H * input_W +
+                                y_p * input_W +
+                                x_p
+                            );
+
+                            int filter_index = (
+                                m * filter_C * filter_H * filter_W +
+                                k * filter_H * filter_W +
+                                i * filter_W +
+                                j
+                            );
+
+                            sum += (activation[input_index] - 128) *
+                                   filter[filter_index];
+                        }
+                    }
+                }
+
+                output[output_index] = max(
+                    output[output_index],
+                    requant(relu(sum), scale)
+                );
+            }
+        }
+    }
 };
 
 void conv(uint32_t input_C, uint32_t input_H, uint32_t input_W,
@@ -15,17 +62,79 @@ void conv(uint32_t input_C, uint32_t input_H, uint32_t input_W,
           uint32_t padding, uint8_t* output, uint32_t scale) {
 
     /*! <<<========= Implement here =========>>>*/
+    uint32_t output_H = (input_H - filter_H + 2 * padding) + 1;
+    uint32_t output_W = (input_W - filter_W + 2 * padding) + 1;
+
+    for (int m = 0; m < filter_N; m++) { // M
+        for (int y = 0; y < output_H; y++) { // E
+            for (int x = 0; x < output_W; x++) { // F
+                int output_index = m * output_H * output_W + y * output_W + x;
+                int32_t sum = bias[m];
+
+                for (int i = 0; i < filter_H; i++) { // R
+                    for (int j = 0; j < filter_W; j++) { // S
+                        for (int k = 0; k < filter_C; k++) { // C
+                            int y_p = y + i - padding;
+                            int x_p = x + j - padding;
+
+                            // 0 padding
+                            if (y_p < 0 || y_p >= input_H || x_p < 0 || x_p >= input_W)
+                                continue;
+
+                            int input_index = (
+                                k * input_H * input_W +
+                                y_p * input_W +
+                                x_p
+                            );
+
+                            int filter_index = (
+                                m * filter_C * filter_H * filter_W +
+                                k * filter_H * filter_W +
+                                i * filter_W +
+                                j
+                            );
+
+                            sum += (activation[input_index] - 128) *
+                                   filter[filter_index];
+                        }
+                    }
+                }
+
+                output[output_index] = requant(relu(sum), scale);
+            }
+        }
+    }
 };
 
 void linear_relu(uint32_t input_size, uint32_t output_size, uint8_t* activation,
                  uint8_t* output, int8_t* filter, int32_t* bias,
                  uint32_t scale) {
     /*! <<<========= Implement here =========>>>*/
+    for (int m = 0; m < output_size; m++) {
+        int32_t sum = bias[m];
+
+        for (int i = 0; i < input_size; i++) {
+            int filter_index = m * input_size + i;
+            sum += ((int32_t)activation[i] - 128) * (int32_t)filter[filter_index];
+        }
+
+        output[m] = requant(relu(sum), scale);
+    }
 };
 
 void linear(uint32_t input_size, uint32_t output_size, uint8_t* activation,
             uint8_t* output, int8_t* filter, int32_t* bias, uint32_t scale) {
     /*! <<<========= Implement here =========>>>*/
+    for (int m = 0; m < output_size; m++) {
+        int32_t sum = bias[m];
+
+        for (int i = 0; i < input_size; i++) {
+            int filter_index = m * input_size + i;
+            sum += ((int32_t)activation[i] - 128) * (int32_t)filter[filter_index];
+        }
+
+        output[m] = requant(sum, scale);
+    }
 };
 
 void quantize(float* input_in_DRAM, uint8_t* output_in_DRAM, uint32_t size,
