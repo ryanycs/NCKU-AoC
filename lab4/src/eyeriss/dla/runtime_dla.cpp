@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "hardware_dla.h"
 #include "runtime.h"
@@ -78,9 +79,37 @@ int qconv2d_relu_maxpool(
     dla_reset_runtime_info();
 #endif
     /*! <<<========= Implement here =========>>>*/
+    uint32_t F = ((W + 2 * PAD - R) / U) + 1;
+    uint32_t glb_size = 64 * 1024;
+    uint32_t glb_ifmap_usage = 1 * (q * r) * (e + R - 1) * W;
+    uint32_t glb_filter_usage = (p * t) * (q * r) * R * S;
+    uint32_t glb_bias_usage = m * 4;
+    m = (
+        (glb_size - glb_ifmap_usage - glb_filter_usage - glb_bias_usage) /
+        (e * F * 4)
+    );
+    m = 1 << (int32_t)log2(m);
+    m = m > M ? M : m;
 
     // call lower setting functions
     /*! <<<========= Implement here =========>>>*/
+    set_mapping_param(m, e, p, q, r, t);
+    set_shape_param1(PAD, U, R, S, C, M);
+    set_shape_param2(W, H, PAD);
+
+    set_ifmap_addr(input_in_DRAM);
+    set_filter_addr(filter_in_DRAM);
+    set_bias_addr(bias);
+    set_opsum_addr(opsum_in_DRAM);
+
+    set_glb_filter_addr(glb_ifmap_usage);
+    set_glb_bias_addr(glb_ifmap_usage + glb_filter_usage);
+    set_glb_ofmap_addr(glb_ifmap_usage + glb_filter_usage + glb_bias_usage);
+
+    set_input_activation_len(ifmap_len);
+    set_output_activation_len(ofmap_len);
+
+    set_enable(scale, true, true, 0);
 
     wait_for_interrupt();
     dla_stop();
@@ -106,9 +135,37 @@ int qconv2d_relu(uint8_t *input_in_DRAM, int8_t *filter_in_DRAM,
     dla_reset_runtime_info();
 #endif
     /*! <<<========= Implement here =========>>>*/
+    uint32_t F = ((W + 2 * PAD - R) / U) + 1;
+    uint32_t glb_size = 64 * 1024;
+    uint32_t glb_ifmap_usage = 1 * (q * r) * (e + R - 1) * W;
+    uint32_t glb_filter_usage = (p * t) * (q * r) * R * S;
+    uint32_t glb_bias_usage = m * 4;
+    m = (
+        (glb_size - glb_ifmap_usage - glb_filter_usage - glb_bias_usage) /
+        (e * F * 4)
+    );
+    m = 1 << (int32_t)log2(m);
+    m = m > M ? M : m;
 
     // call lower setting functions
     /*! <<<========= Implement here =========>>>*/
+    set_mapping_param(m, e, p, q, r, t);
+    set_shape_param1(PAD, U, R, S, C, M);
+    set_shape_param2(W, H, PAD);
+
+    set_ifmap_addr(input_in_DRAM);
+    set_filter_addr(filter_in_DRAM);
+    set_bias_addr(bias);
+    set_opsum_addr(opsum_in_DRAM);
+
+    set_glb_filter_addr(glb_ifmap_usage);
+    set_glb_bias_addr(glb_ifmap_usage + glb_filter_usage);
+    set_glb_ofmap_addr(glb_ifmap_usage + glb_filter_usage + glb_bias_usage);
+
+    set_input_activation_len(ifmap_len);
+    set_output_activation_len(ofmap_len);
+
+    set_enable(scale, false, true, 0);
 
     wait_for_interrupt();
     dla_stop();
