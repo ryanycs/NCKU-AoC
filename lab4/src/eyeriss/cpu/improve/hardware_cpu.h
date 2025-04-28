@@ -16,6 +16,8 @@
                             ? 255                            \
                             : ((uint8_t)(((input) >> (scale)) + 128))))
 
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
 /** parameters
  * @param input_C      Number of input channels.
  * @param input_H      Input height.
