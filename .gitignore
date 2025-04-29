@@ -1,5 +1,20 @@
+# VSCode config
+.vscode/
+
+# Python
 .venv/
 __pycache__/
-logs/
+
+# C
+build/
 obj_dir/
+obj/
+*.elf
+
+# Verilog
 *.vcd
+
+# log files
+logs/
+*.log
+*.csv
