@@ -15,6 +15,9 @@ obj/
 *.vcd
 
 # log files
+log/
 logs/
+output/
+massif_out/
 *.log
 *.csv
