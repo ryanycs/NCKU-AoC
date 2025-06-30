@@ -1,4 +1,4 @@
-# AI-ON-CHIP | 人工智慧晶片設計與應用
+# AI on Chip | 人工智慧晶片設計與應用 2025
 
 ## Lab
 
@@ -7,3 +7,9 @@
 - [Lab 3 - Hardware Architecture Design](https://ryanycs.github.io/NCKU-AoC/Lab3_Hardware_Architecture_Design.html)
 - [Lab 4 - Runtime and Performance Profiling](https://ryanycs.github.io/NCKU-AoC/Lab4_Runtime_and_Performance_Analysis.html)
 - [Lab 5 - AI Compiler](https://ryanycs.github.io/NCKU-AoC/Lab5_AI_Compiler.html)
+
+> :warning: This repository only contains the section that needs to be completed by students. To run the labs, you need to download the lab files from the release page, and replace the directory with the one in this repository.
+
+## Final Project
+
+- [Final Project - Lightweight DnCNN Accelerator](https://github.com/ryanycs/lightweight-dncnn-accelerator)
